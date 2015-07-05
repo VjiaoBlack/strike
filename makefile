@@ -1,39 +1,45 @@
-MACHINE = $(shell uname -s)
-INCLUDES = -Isrc/
-DIRS = 
-OBJS = $(patsubst src/%.c,obj/%.o, $(wildcard src/*.c) $(foreach d, $(DIRS), $(wildcard src/$(d)/*.c)))
+PROGRAM = game
+SOURCES = src
+BUILD   = build
+DEVEXT  = -dev
 
-CXX = gcc
-PLATFORM_LIBS = 
-WARNINGS = -Wall -Wextra -Werror -Wfloat-equal -Winit-self -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wwrite-strings -Wunreachable-code -Wold-style-definition -Wstrict-prototypes -Wmissing-prototypes -Wstrict-overflow=2 --pedantic
-FEATURES = -fno-builtin -ffunction-sections
-CFLAGS = -std=c11 -O -g -march=native $(WARNINGS) $(FEATURES)
+CC     = clang
+FLAGS  = -O2 -Wall -Wextra -pedantic -std=c11
+CFLAGS = $(shell sdl2-config --cflags)
+LIBS   = $(shell sdl2-config --libs)
+MKDIR  = mkdir -p
+RM     = rm -rf
 
-ifeq ($(MACHINE), Darwin)
-	CXX = clang -stdlib=libc
-	PLATFORM_LIBS = -framework Cocoa -framework OpenGL $(shell sdl2-config --libs)
+MODE = release
+BNRY = $(PROGRAM)
+SDRS = $(shell find $(SOURCES) -type d | xargs echo)
+SRCS = $(filter-out %.inc.c,$(foreach d,$(SDRS),$(wildcard $(addprefix $(d)/*,.c))))
+OBJS = $(patsubst %.c,%.o,$(addprefix $(BUILD)/$(MODE)/,$(SRCS)))
+DEPS = $(OBJS:%.o=%.d)
+DIRS = $(sort $(dir $(OBJS)))
+
+ifdef DEBUG
+	BNRY  := $(BNRY)$(DEVEXT)
+	FLAGS += -g -fsanitize=address -DDEBUG_MODE
+	MODE   = debug
 endif
 
-LIBS = $(PLATFORM_LIBS)
-EXEC = game.out
+.PHONY: all clean
 
-main: dirs $(OBJS)
-	$(CXX) $(CFLAGS) -o $(EXEC) $(OBJS) $(LIBS)
-
-analyze: dirs $(OBJS)
-	$(CXX) $(CFLAGS) --analyze src/main.cpp $(INCLUDES)
-
-obj/%.o: src/%.cpp
-	$(CXX) $(CFLAGS) -c -o $@ $< $(INCLUDES)
-
-dirs:
-	@test -d obj || mkdir obj
-	@for DIRECTORY in $(DIRS) ; do \
-		test -d obj/$$DIRECTORY || mkdir obj/$$DIRECTORY; \
-	done
+all: $(BNRY)
 
 clean:
-	rm -f $(EXEC) $(OBJS)
+	$(RM) $(BUILD) $(PROGRAM) $(PROGRAM)$(DEVEXT)
 
-run: main
-	$(EXEC)
+$(DIRS):
+	$(MKDIR) $@
+
+$(BNRY): $(OBJS)
+	$(CC) $(FLAGS) $(LIBS) $(OBJS) -o $@
+
+$(OBJS): | $(DIRS)
+
+$(BUILD)/$(MODE)/%.o: %.c
+	$(CC) $(FLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
+
+-include $(DEPS)
