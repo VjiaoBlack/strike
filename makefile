@@ -24,12 +24,15 @@ ifdef DEBUG
 	MODE   = debug
 endif
 
-.PHONY: all clean
+.PHONY: all clean run
 
 all: $(BNRY)
 
 clean:
 	$(RM) $(BUILD) $(PROGRAM) $(PROGRAM)$(DEVEXT)
+
+run: $(BNRY)
+	./$(BNRY)
 
 $(DIRS):
 	$(MKDIR) $@
