@@ -1,4 +1,4 @@
-PROGRAM = game
+PROGRAM = strike
 SOURCES = src
 BUILD   = build
 DEVEXT  = -dev
