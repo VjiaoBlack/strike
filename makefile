@@ -6,7 +6,7 @@ DEVEXT  = -dev
 CC     = clang
 FLAGS  = -O2 -Wall -Wextra -pedantic -std=c11
 CFLAGS = $(shell sdl2-config --cflags)
-LIBS   = $(shell sdl2-config --libs)
+LIBS   = $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf
 MKDIR  = mkdir -p
 RM     = rm -rf
 
